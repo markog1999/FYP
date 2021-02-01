@@ -1,58 +1,49 @@
-
 import time as time
+
 
 class GridNode:
     def __init__(self, gridPointer, x, y, z):
-        self._grid = gridPointer
-        self._coord = (x, y, z)
-        self._occupiedTimes = []
-        self._unOccupiedTimes = []
-        self._adjacentNodes = []
+        self._grid = gridPointer  # The parent grid of the node
+        self._coord = (x, y, z)  # co-ordinates within the parent grid
+        self._occupiedTimes = []  # a list of tuples, [(start,end)] , indicating times node is occupied
+        self._adjacentNodes = []  # other nodes which can be reached directly from this node
 
+    # Add a node (tuple representing their co-ordinates) which can be reached directly from this node
     def AddAdjacent(self, new: tuple):
         self._adjacentNodes.append(new)
 
+    # Re
     def GetAdjacents(self):
         return self._adjacentNodes
-
-    def CheckAvailability(self, start, end):
-    # TODO: Optimise, use binary search or similar
-    # In order to affirm that the time is available, we must check that there is no previous timestamp between start/end
+    
+    def CheckAvailability(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
+        # TODO: Implement a binary search for speed
         i = 0
-
-        # This loop checks that another drone does not begin "occupying" the node in between start and end times.
-        while i < len(self._occupiedTimes):
-            timeStamp = self._occupiedTimes[i]
-            if timeStamp < start:
+        while i <= len(self._occupiedTimes):
+            if (self._occupiedTimes[i])[1] > start:
                 i += 1
                 continue
-            if timeStamp > start:
-                if timeStamp <= end:
-                    return False #TODO: Instead, return time until node becomes available
-                if timeStamp > end:
-                    break
-            if timeStamp == start:
-                return False #TODO: Instead, return time until node becomes available
+            elif (self._occupiedTimes[i])[1] < start:
+                if (self._occupiedTimes[i + 1])[0] <= end:
+                    raise Exception("Overlap between timestamps")
+                else:
+                    self._occupiedTimes.insert(i + 1, (start, end))
 
+    # Add a tuple to the node representing a period of time that the node will be occupied
+    def OccupyTime(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
+        # TODO: Implement a binary search to speed up insertion
+        i = 0
+        while i <= len(self._occupiedTimes):
+            if (self._occupiedTimes[i])[1] > start:
+                i += 1
+                continue
+            elif (self._occupiedTimes[i])[1] < start:
+                if (self._occupiedTimes[i + 1])[0] <= end:
+                    raise Exception("Overlap between timestamps")
+                else:
+                    self._occupiedTimes.insert(i + 1, (start, end))
 
-    def OccupyTime(self, start, end):
-        # TODO: Optimise, use binary search or similar to find insertion index faster
-        def InsertTime(time, list):
-            i = 0
-            while i < len(list):
-                if list[i] == time:
-                    raise Exception(f"Timestamp cannot be inserted into GridNode at {self._coord}, stamp already recorded")
-                elif list[i] < time:
-                    i += 1
-                    continue
-                elif list[i] > time:
-                    list.insert(i, time)
-                    break
-
-        if (self.CheckAvailability(start, end)):
-            InsertTime(start, self._occupiedTimes)
-            InsertTime(start, self._unOccupiedTimes)
-
+    # Get co-ordinates of the node
     def GetCoords(self):
         return self._coord
 
@@ -101,9 +92,8 @@ class Array3D:
         result = ""
         for i in self.Array:
             for j in i:
-                    for k in j:
-                        result += str(k)
-                        result += " "
+                for k in j:
+                    result += str(k)
+                    result += " "
             result += " \n"
         return result
-
