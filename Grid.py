@@ -5,30 +5,53 @@ class GridNode:
     def __init__(self, gridPointer, x, y, z):
         self._grid = gridPointer
         self._coord = (x, y, z)
-        self._availability = True
+        self._occupiedTimes = []
+        self._unOccupiedTimes = []
         self._adjacentNodes = []
-        self._availableNodes = []
 
     def AddAdjacent(self, new: tuple):
         self._adjacentNodes.append(new)
+
     def GetAdjacents(self):
         return self._adjacentNodes
 
-    def AddAvailable(self, new: tuple):
-        self._availableNodes.append(new)
-    def GetAvailableNodes(self):
-        return self._availableNodes
-    def UpdateAvailableNodes(self):
-        self._availableNodes = []
-        for coordinates in self.GetAdjacents():
-            if self._grid.getNode(coordinates).GetAvailability() == True:
-                self._availableNodes.append(coordinates)
+    def CheckAvailability(self, start, end):
+    # TODO: Optimise, use binary search or similar
+    # In order to affirm that the time is available, we must check that there is no previous timestamp between start/end
+        i = 0
 
-    def GetAvailability(self):
-        return self._availability
+        # This loop checks that another drone does not begin "occupying" the node in between start and end times.
+        while i < len(self._occupiedTimes):
+            timeStamp = self._occupiedTimes[i]
+            if timeStamp < start:
+                i += 1
+                continue
+            if timeStamp > start:
+                if timeStamp <= end:
+                    return False #TODO: Instead, return time until node becomes available
+                if timeStamp > end:
+                    break
+            if timeStamp == start:
+                return False #TODO: Instead, return time until node becomes available
 
-    def SetAvailability(self, b: bool):
-        self._availability = b
+
+    def OccupyTime(self, start, end):
+        # TODO: Optimise, use binary search or similar to find insertion index faster
+        def InsertTime(time, list):
+            i = 0
+            while i < len(list):
+                if list[i] == time:
+                    raise Exception(f"Timestamp cannot be inserted into GridNode at {self._coord}, stamp already recorded")
+                elif list[i] < time:
+                    i += 1
+                    continue
+                elif list[i] > time:
+                    list.insert(i, time)
+                    break
+
+        if (self.CheckAvailability(start, end)):
+            InsertTime(start, self._occupiedTimes)
+            InsertTime(start, self._unOccupiedTimes)
 
     def GetCoords(self):
         return self._coord
