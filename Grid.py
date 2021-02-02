@@ -1,5 +1,4 @@
-import time as time
-
+import Config
 
 class GridNode:
     def __init__(self, gridPointer, x, y, z):
@@ -15,23 +14,44 @@ class GridNode:
     # Re
     def GetAdjacents(self):
         return self._adjacentNodes
-    
-    def CheckAvailability(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
-        # TODO: Implement a binary search for speed
+
+    # Return the next available time (in Unix time) for a proposed journey to this node from a neighbour
+    def NextAvailableTime(self, start: float, duration: float):  # Start should be in Unix time, duration should be expected flight duration in seconds
+        # TODO: Implement a better search method
+
+        duration += Config.values["occupation_time_safety_margin"]
+
+        if len(self._occupiedTimes) == 0:
+            return start
+
         i = 0
-        while i <= len(self._occupiedTimes):
-            if (self._occupiedTimes[i])[1] > start:
+        # loop should end iterate over all but the last element of the list (where i == len(self.occupiedTimes) )
+        while i < len(self._occupiedTimes):
+
+            prev_interval_end = (self._occupiedTimes[i])[1]
+            # Checks that a time interval ends before the new interval starts, if not iterates to the next
+            if prev_interval_end > start:
+
                 i += 1
                 continue
-            elif (self._occupiedTimes[i])[1] < start:
-                if (self._occupiedTimes[i + 1])[0] <= end:
-                    raise Exception("Overlap between timestamps")
-                else:
-                    self._occupiedTimes.insert(i + 1, (start, end))
+
+            # If the time interval ends before the new interval starts
+            elif prev_interval_end <= start:
+                next_interval_start = (self._occupiedTimes[i+1])[0]
+                unoccupied_time = next_interval_start - prev_interval_end
+
+                # If the duration before the start of the next interval is longer than the expected flight duration
+                if (unoccupied_time - duration) >= 0:
+
+                    # Return the end of previous interval as next available time
+                    return prev_interval_end
+        # If the function iterates over all items of the list and finds no available interval, return end of last occupied interval
+        return (self._occupiedTimes[i])[1]
 
     # Add a tuple to the node representing a period of time that the node will be occupied
     def OccupyTime(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
-        # TODO: Implement a binary search to speed up insertion
+        # TODO: Implement a better search method to speed up insertion
+        end += Config.values["occupation_time_safety_margin"]
         i = 0
         while i <= len(self._occupiedTimes):
             if (self._occupiedTimes[i])[1] > start:
