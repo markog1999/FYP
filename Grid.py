@@ -1,5 +1,6 @@
 import Config
 
+
 class GridNode:
     def __init__(self, gridPointer, x, y, z):
         self._grid = gridPointer  # The parent grid of the node
@@ -16,13 +17,13 @@ class GridNode:
         return self._adjacentNodes
 
     # Return the next available time (in Unix time) for a proposed journey to this node from a neighbour
-    def NextAvailableTime(self, start: float, duration: float):  # Start should be in Unix time, duration should be expected flight duration in seconds
-        # TODO: Implement a better search method
+    def NextAvailableTime(self, flight_start: float, duration: float):  # Start should be in Unix time, duration
+        # should be expected flight duration in seconds TODO: Implement a better search method
 
         duration += Config.values["occupation_time_safety_margin"]
 
         if len(self._occupiedTimes) == 0:
-            return start
+            return flight_start
 
         i = 0
         # loop should end iterate over all but the last element of the list (where i == len(self.occupiedTimes) )
@@ -30,22 +31,27 @@ class GridNode:
 
             prev_interval_end = (self._occupiedTimes[i])[1]
             # Checks that a time interval ends before the new interval starts, if not iterates to the next
-            if prev_interval_end > start:
+            if prev_interval_end > flight_start:
 
                 i += 1
                 continue
 
             # If the time interval ends before the new interval starts
-            elif prev_interval_end <= start:
-                next_interval_start = (self._occupiedTimes[i+1])[0]
-                unoccupied_time = next_interval_start - prev_interval_end
+            elif prev_interval_end <= flight_start:
+                next_interval_start = (self._occupiedTimes[i + 1])[0]
 
                 # If the duration before the start of the next interval is longer than the expected flight duration
-                if (unoccupied_time - duration) >= 0:
-
+                if (next_interval_start - (flight_start + duration)) >= 0:
                     # Return the end of previous interval as next available time
-                    return prev_interval_end
-        # If the function iterates over all items of the list and finds no available interval, return end of last occupied interval
+                    return flight_start
+                else:
+                    # The flight cannot begin during this interval, try start of next interval
+                    flight_start = self._occupiedTimes[i + 1][1]
+                    i += 1
+                    continue
+
+        # If the function iterates over all items of the list and finds no available interval, return end of last
+        # occupied interval
         return (self._occupiedTimes[i])[1]
 
     # Add a tuple to the node representing a period of time that the node will be occupied
@@ -53,7 +59,7 @@ class GridNode:
         # TODO: Implement a better search method to speed up insertion
         end += Config.values["occupation_time_safety_margin"]
         i = 0
-        while i <= len(self._occupiedTimes):
+        while i < len(self._occupiedTimes):
             if (self._occupiedTimes[i])[1] > start:
                 i += 1
                 continue
@@ -62,6 +68,12 @@ class GridNode:
                     raise Exception("Overlap between timestamps")
                 else:
                     self._occupiedTimes.insert(i + 1, (start, end))
+                    break
+        if len(self._occupiedTimes) == 0:
+            self._occupiedTimes.insert(0, (start, end))
+
+        elif i == len(self._occupiedTimes):
+            self._occupiedTimes.insert(i, (start, end))
 
     # Get co-ordinates of the node
     def GetCoords(self):
@@ -82,20 +94,20 @@ class Array3D:
                 self.Array[i].append([])
                 k = 0
                 while k < zLimit:
-                    newNode = GridNode(self, i, j, k)
-                    self.Array[i][j].append(newNode)
+                    node = GridNode(self, i, j, k)
+                    self.Array[i][j].append(node)
                     if (i - 1) > 0:
-                        newNode.AddAdjacent((i - 1, j, k))
+                        node.AddAdjacent((i - 1, j, k))
                     if (i + 1) < xLimit:
-                        newNode.AddAdjacent((i + 1, j, k))
+                        node.AddAdjacent((i + 1, j, k))
                     if (j - 1) > 0:
-                        newNode.AddAdjacent((i, j - 1, k))
+                        node.AddAdjacent((i, j - 1, k))
                     if (j + 1) < zLimit:
-                        newNode.AddAdjacent((i, j + 1, k))
+                        node.AddAdjacent((i, j + 1, k))
                     if (k - 1) > 0:
-                        newNode.AddAdjacent((i, j, k - 1))
+                        node.AddAdjacent((i, j, k - 1))
                     if (k + 1) < zLimit:
-                        newNode.AddAdjacent((i, j, k + 1))
+                        node.AddAdjacent((i, j, k + 1))
 
                     k += 1
                 j += 1
@@ -105,8 +117,8 @@ class Array3D:
         x = coords[0]
         y = coords[1]
         z = coords[2]
-        Node = self.Array[x][y][z]
-        return Node
+        node = self.Array[x][y][z]
+        return node
 
     def __str__(self):
         result = ""

@@ -1,6 +1,10 @@
 from math import sqrt
 from Grid import *
 
+"""
+This class produced paths in a time-agnostic grid, now redundant.
+"""
+
 def simplePath(start, end, grid, path):
     if start == end:
         path.append(start)
@@ -9,7 +13,6 @@ def simplePath(start, end, grid, path):
         grid.getNode(start).SetAvailability(False)
         path.append(start)
         start_node = grid.getNode(start)
-        next_node = None
         start_node.UpdateAvailableNodes()
         next_node = nextStep(start_node,end)
         return simplePath(next_node,end, grid, path)
