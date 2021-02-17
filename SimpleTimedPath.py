@@ -9,7 +9,7 @@ from math import sqrt
 def SimpleTimedPath(start_coords: tuple, end_coords: tuple, start_time: float, grid: Array3D):
 
     start_node: GridNode = grid.getNode(start_coords)
-    node_traverse_duration = 100
+
     # TODO: Implement variable traverse duration based on distance between nodes and drone capabilities
     node_weights = {start_node: 0}
 
@@ -18,15 +18,31 @@ def SimpleTimedPath(start_coords: tuple, end_coords: tuple, start_time: float, g
     while start_coords != end_coords: # TODO: Assumes a path exists from start to end, implement handling if this is not the case
         adjacents = grid.getNode(start_coords).GetAdjacents()
         distances = [distance(end_coords, x) for x in adjacents]
-        #distances = [map(lambda x: distance(x, end_coords), adjacents)]
         next_step = adjacents[(distances).index(min(distances))]
         direct_path.append(next_step)
         start_coords = next_step
+
     return direct_path
-    # figure out the time cost of the direct path:
+    #return list(zip(find_path_weights(direct_path, start_time, node_traverse_duration, grid), direct_path))
+
+def find_path_weights(path: list, search_start_time: float, flight_duration: float, grid ):
+    windows = []
+    for coord in path:
+        node: GridNode = grid.getNode(coord)
+        adjacents = node.GetAdjacents()
+        window = node.NextAvailableTime(search_start_time, flight_duration)
+        windows.append(window)[distance(end_coords, x) for x in adjacents]
+        search_start_time = window + flight_duration
 
 
 
+
+    return windows
+
+
+
+
+duration: float
 def find_flight_window(node1: GridNode, node2: GridNode, search_start_time: float, flight_duration: float):
     while 1:
         # Find the time that the first node could start the flight

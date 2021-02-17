@@ -34,7 +34,7 @@ class GridNode:
             if prev_interval_end > flight_start:
 
                 i += 1
-                continue
+                continueflight_duration
 
             # If the time interval ends before the new interval starts
             elif prev_interval_end <= flight_start:
@@ -52,28 +52,29 @@ class GridNode:
 
         # If the function iterates over all items of the list and finds no available interval, return end of last
         # occupied interval
-        return (self._occupiedTimes[i])[1]
+        return (self._occupiedTimes[i-1])[1]
 
     # Add a tuple to the node representing a period of time that the node will be occupied
     def OccupyTime(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
         # TODO: Implement a better search method to speed up insertion
         end += Config.values["occupation_time_safety_margin"]
         i = 0
-        while i < len(self._occupiedTimes):
-            if (self._occupiedTimes[i])[1] > start:
-                i += 1
-                continue
-            elif (self._occupiedTimes[i])[1] < start:
-                if (self._occupiedTimes[i + 1])[0] <= end:
-                    raise Exception("Overlap between timestamps")
-                else:
-                    self._occupiedTimes.insert(i + 1, (start, end))
-                    break
         if len(self._occupiedTimes) == 0:
             self._occupiedTimes.insert(0, (start, end))
+        else:
+            while i < len(self._occupiedTimes):
+                if (self._occupiedTimes[i])[1] > start:
+                    i += 1
+                    continue
+                elif (self._occupiedTimes[i])[1] < start:
+                    if (self._occupiedTimes[i + 1])[0] <= end:
+                        raise Exception("Overlap between timestamps")
+                    else:
+                        self._occupiedTimes.insert(i + 1, (start, end))
+                        break
 
-        elif i == len(self._occupiedTimes):
-            self._occupiedTimes.insert(i, (start, end))
+            if i == len(self._occupiedTimes):
+                self._occupiedTimes.insert(i, (start, end))
 
     # Get co-ordinates of the node
     def GetCoords(self):
@@ -81,7 +82,6 @@ class GridNode:
 
     def __str__(self):
         return str(self._coord)
-
 
 class Array3D:
     def __init__(self, xLimit, yLimit, zLimit):
