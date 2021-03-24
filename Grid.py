@@ -16,7 +16,8 @@ class GridNode:
     def GetAdjacents(self):
         return self._adjacentNodes
 
-    # Return the next available time (in Unix time) for a proposed journey to this node from a neighbour
+    # Return the next available time (in Unix time) for a proposed journey to this node from any neighbour
+    # Tjis is calculated by comparing the expected duration of the flight to the gaps between already filled time periods.
     def NextAvailableTime(self, flight_start: float, duration: float):  # Start should be in Unix time, duration
         # should be expected flight duration in seconds TODO: Implement a better search method
 
@@ -27,14 +28,14 @@ class GridNode:
 
         i = 0
         # loop should end iterate over all but the last element of the list (where i == len(self.occupiedTimes) )
-        while i < len(self._occupiedTimes):
+        while i < (len(self._occupiedTimes)-1):
 
             prev_interval_end = (self._occupiedTimes[i])[1]
             # Checks that a time interval ends before the new interval starts, if not iterates to the next
             if prev_interval_end > flight_start:
 
                 i += 1
-                continueflight_duration
+                continue
 
             # If the time interval ends before the new interval starts
             elif prev_interval_end <= flight_start:
@@ -45,14 +46,18 @@ class GridNode:
                     # Return the end of previous interval as next available time
                     return flight_start
                 else:
-                    # The flight cannot begin during this interval, try start of next interval
-                    flight_start = self._occupiedTimes[i + 1][1]
+                    # The flight cannot begin during this interval, try starting at the end of next occupied interval
+                    if flight_start < self._occupiedTimes[i + 1][1]:
+                        flight_start = self._occupiedTimes[i+1][1]
                     i += 1
                     continue
 
-        # If the function iterates over all items of the list and finds no available interval, return end of last
-        # occupied interval
-        return (self._occupiedTimes[i-1])[1]
+        # If the function iterates over all items of the list and finds no available interval,
+        # return either the given start time or the last free interval, whichever is later.
+        if ((self._occupiedTimes[i-1])[1] > flight_start):
+            return (self._occupiedTimes[i-1])[1]
+        else:
+            return flight_start
 
     # Add a tuple to the node representing a period of time that the node will be occupied
     def OccupyTime(self, start: float, end: float):  # Start and end should be times in seconds since Unix time
@@ -62,19 +67,20 @@ class GridNode:
         if len(self._occupiedTimes) == 0:
             self._occupiedTimes.insert(0, (start, end))
         else:
-            while i < len(self._occupiedTimes):
-                if (self._occupiedTimes[i])[1] > start:
+            while i < (len(self._occupiedTimes)):
+                if (self._occupiedTimes[i])[1] <= start:
                     i += 1
                     continue
-                elif (self._occupiedTimes[i])[1] < start:
-                    if (self._occupiedTimes[i + 1])[0] <= end:
+                elif (self._occupiedTimes[i])[1] > start:
+                    if (self._occupiedTimes[i + 1])[0] < end:
                         raise Exception("Overlap between timestamps")
                     else:
-                        self._occupiedTimes.insert(i + 1, (start, end))
-                        break
+                        self._occupiedTimes.insert(i, (start, end))
+                        return
 
-            if i == len(self._occupiedTimes):
+            if i == (len(self._occupiedTimes)-1):
                 self._occupiedTimes.insert(i, (start, end))
+
 
     # Get co-ordinates of the node
     def GetCoords(self):
@@ -85,7 +91,8 @@ class GridNode:
 
 class Array3D:
     def __init__(self, xLimit, yLimit, zLimit):
-        self.Array = []
+        self.\
+            Array = []
         i = 0
         while i < xLimit:
             self.Array.append([])
