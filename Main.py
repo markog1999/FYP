@@ -1,6 +1,6 @@
 
 import Grid as g
-import SimpleTimedPath
+import Pathing
 from random import randint
 from matplotlib import pyplot
 
@@ -19,11 +19,11 @@ def GenerateRandomPaths(n, x_limit,y_limit,z_limit):
 
     return myTestPaths
 
-x_limit = 100
-y_limit = 100
-z_limit = 100
+x_limit = 10
+y_limit = 10
+z_limit = 10
 start_times_range = 0
-n = 5000000
+n = 10000
 
 print("Generating node array")
 myArray = g.Array3D(x_limit+1,y_limit+1,z_limit+1)
@@ -34,16 +34,23 @@ start_times = [randint(0, start_times_range) for i in range(0,n)]
 print("Checking Paths")
 
 paths_checked = 0 #((0/n)*100)//1
-results = [] #The estimated duration of each path, listed sequentially
+durations = [] #The estimated duration of each path, listed sequentially
+finishtimes = []
+starttimes = []
 rolling_average = []
 
 
 
 for path in testPaths:
-    duration = SimpleTimedPath.DirectPath(path[0],path[1],start_times[paths_checked],myArray)
-    results.append(duration)
+    route = Pathing.DirectPath(path[0], path[1], start_times[paths_checked], myArray)
+    route.commit(myArray)
+    durations.append(route.duration())
+    finishtimes.append(route.endTime())
+    starttimes.append(route.startTime())
+
+
     try:
-        average_over_last_10 = sum([results[x] for x in range (-51,-1)]) / 50
+        average_over_last_10 = sum([finishtimes[x] for x in range (-51,-1)]) / 50
         rolling_average.append(average_over_last_10)
     except:
         rolling_average.append(0)
@@ -52,42 +59,13 @@ for path in testPaths:
 print("\n")
 
 
-
-pyplot.plot([n for n in range(0,n)], results)
+pyplot.plot([n for n in range(0,n)], finishtimes)
+# pyplot.plot([n for n in range(0,n)], durations)
+# pyplot.plot([n for n in range(0,n)], durations)
+# pyplot.plot([n for n in range(0,n)], starttimes)
 pyplot.plot([n for n in range(0,n)], rolling_average)
+
+pyplot.xlabel("Drones routed though the airspace")
+pyplot.ylabel("Duration of flight")
 pyplot.show()
 
-
-
-
-
-
-"""
-node1 = myArray.getNode((1,1,1))
-node2 = myArray.getNode((1,1,1))
-
-print(SimpleTimedPath.find_flight_window(node1,node2, 200,100))
-"""
-
-"""
-a = SimpleTimedPath.DirectPath((1, 1, 1), (1, 5, 5), 1000, myArray)
-b = SimpleTimedPath.DirectPath((1, 1, 1), (1, 5, 5), 1000, myArray)
-c = SimpleTimedPath.DirectPath((1, 1, 1), (1, 5, 5), 1000, myArray)
-x = SimpleTimedPath.DirectPath((1, 1, 1), (1, 5, 5), 1000, myArray)
-y = SimpleTimedPath.DirectPath((1, 5, 5), (1, 1, 1), 1000, myArray)
-z =SimpleTimedPath.DirectPath((2, 8, 0), (3, 8, 7), 1000, myArray)
-
-
-def report(*args):
-    if len(args) >=2:
-        report = ""
-        for arg in args:
-            report += str(arg)
-            report += '\n'
-        print(report)
-    else:
-        print(args)
-
-report(a,b,c,x,y,z)
-
-"""

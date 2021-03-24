@@ -1,7 +1,7 @@
 from typing import List
-
 from Grid import *
 from math import sqrt
+from Route import RouteObject
 
 
 # TODO: This implementation always waits to access node in the "right" direction, implement a version which searches
@@ -15,6 +15,7 @@ def DirectPath(start_coords: tuple, end_coords: tuple, start_time: float, grid: 
 
     # First establish the shortest path geometrically
     direct_path: List[tuple] = [start_coords]
+    path_times: List[tuple] = []
     current_step = start_coords
     while current_step != end_coords: # TODO: Assumes a path exists from start to end, implement handling if this is not the case
         adjacents = grid.getNode(current_step).GetAdjacents()
@@ -27,17 +28,21 @@ def DirectPath(start_coords: tuple, end_coords: tuple, start_time: float, grid: 
     current_search_start_time = start_time
     i = 1
     while i < len(direct_path):
+        nodes_travel_time = 100
         node1 =  grid.getNode(direct_path[i-1])
         node2 = grid.getNode((direct_path[i]))
 
-        current_search_start_time = find_flight_window(node1,node2, current_search_start_time, 100)
-        node1.OccupyTime(current_search_start_time, (current_search_start_time + 100))
-
-
+        current_search_start_time = find_flight_window(node1,node2, current_search_start_time, nodes_travel_time)
+        path_times.append((current_search_start_time, (current_search_start_time + nodes_travel_time)))
+        current_search_start_time += nodes_travel_time
         i+=1
 
-    # return direct_path, start_time, current_search_start_time + 100
-    return (current_search_start_time + 100) - start_time # Temporary output for testing, returns path travel duration
+    route_object = RouteObject(direct_path,path_times)
+    return route_object
+
+def OptimisedPath(start_coords: tuple, end_coords: tuple, start_time: float, grid: Array3D):
+    direct_route = DirectPath(start_coords, end_coords, start_time, grid)
+    direct_duration = direct_route.duration()
 
 def find_flight_window(node1: GridNode, node2: GridNode, search_start_time: float, flight_duration: float):
     while 1:
