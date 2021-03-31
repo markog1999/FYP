@@ -1,4 +1,5 @@
 import Config
+from random import random
 
 
 class GridNode:
@@ -67,7 +68,7 @@ class GridNode:
         if len(self._occupiedTimes) == 0:
             self._occupiedTimes.insert(0, (start, end))
         else:
-            while i < (len(self._occupiedTimes)):
+            while i < (len(self._occupiedTimes)-1):
                 if (self._occupiedTimes[i])[1] <= start:
                     i += 1
                     continue
@@ -75,11 +76,11 @@ class GridNode:
                     if (self._occupiedTimes[i + 1])[0] < end:
                         raise Exception("Overlap between timestamps")
                     else:
-                        self._occupiedTimes.insert(i, (start, end))
+                        self._occupiedTimes.insert(i+1, (start, end))
                         return
 
             if i == (len(self._occupiedTimes)-1):
-                self._occupiedTimes.insert(i, (start, end))
+                self._occupiedTimes.insert(i+1, (start, end))
 
 
     # Get co-ordinates of the node
@@ -90,35 +91,71 @@ class GridNode:
         return str(self._coord)
 
 class Array3D:
-    def __init__(self, xLimit, yLimit, zLimit):
-        self.\
-            Array = []
+    def __init__(self, xLimit, yLimit, zLimit, connection_density):
+        self.Array = []
         i = 0
-        while i < xLimit:
+        while i <= xLimit:
             self.Array.append([])
             j = 0
-            while j < yLimit:
+            while j <= yLimit:
                 self.Array[i].append([])
                 k = 0
-                while k < zLimit:
+                while k <= zLimit:
                     node = GridNode(self, i, j, k)
                     self.Array[i][j].append(node)
-                    if (i - 1) > 0:
+                    if (i - 1) >= 0:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i - 1, j, k))
+                    if (i + 1) <= xLimit:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i + 1, j, k))
+                    if (j - 1) >= 0:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i, j - 1, k))
+                    if (j + 1) <= zLimit:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i, j + 1, k))
+                    if (k - 1) >= 0:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i, j, k - 1))
+                    if (k + 1) <= zLimit:
+                        if random() <= connection_density:
+                            node.AddAdjacent((i, j, k + 1))
+
+                    k += 1
+                j += 1
+            i += 1
+
+class Array3D:
+    def __init__(self, xLimit, yLimit, zLimit):
+        self.Array = []
+        i = 0
+        while i <= xLimit:
+            self.Array.append([])
+            j = 0
+            while j <= yLimit:
+                self.Array[i].append([])
+                k = 0
+                while k <= zLimit:
+                    node = GridNode(self, i, j, k)
+                    self.Array[i][j].append(node)
+                    if (i - 1) >= 0:
                         node.AddAdjacent((i - 1, j, k))
-                    if (i + 1) < xLimit:
+                    if (i + 1) <= xLimit:
                         node.AddAdjacent((i + 1, j, k))
-                    if (j - 1) > 0:
+                    if (j - 1) >= 0:
                         node.AddAdjacent((i, j - 1, k))
-                    if (j + 1) < zLimit:
+                    if (j + 1) <= zLimit:
                         node.AddAdjacent((i, j + 1, k))
-                    if (k - 1) > 0:
+                    if (k - 1) >= 0:
                         node.AddAdjacent((i, j, k - 1))
-                    if (k + 1) < zLimit:
+                    if (k + 1) <= zLimit:
                         node.AddAdjacent((i, j, k + 1))
 
                     k += 1
                 j += 1
             i += 1
+
 
     def getNode(self, coords):
         x = coords[0]
